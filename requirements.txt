@@ -1,0 +1,5 @@
+streamlit>=1.35.0
+starlette<0.37.0
+mysql-connector-python
+pandas
+plotly
