@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from modules.auth import authenticate_user, register_user
 from database.connection import fetch_data
 
+
 def generate_qr(data: str) -> BytesIO:
     """Generates an in-memory QR code image stream."""
     qr = qrcode.QRCode(version=1, box_size=6, border=2)
@@ -22,43 +23,57 @@ def generate_qr(data: str) -> BytesIO:
     buf.seek(0)
     return buf
 
-@st.cache_data(ttl=30)  # Caches metrics for 30s so 200 users don't overwhelm the DB
-def fetch_live_statistics():
-    """Fetches factual, real-time statistics from MySQL tables."""
-    stats = {
-        "students": 0,
-        "submissions": 0,
-        "passed": 0
-    }
-    
-    try:
-        # 1. Total Registered Students
-        df_students = fetch_data("SELECT COUNT(*) AS total FROM users WHERE role = 'Student'")
-        if df_students is not None and not df_students.empty:
-            stats["students"] = int(df_students.iloc[0]['total'])
 
-        # 2. Total Quiz Submissions
+def get_current_app_url() -> str:
+    """Detects active public domain or falls back to your deployed Streamlit URL."""
+    # ⚠️ REPLACE THIS WITH YOUR ACTUAL LIVE STREAMLIT CLOUD APP URL:
+    DEPLOYED_URL = "https://YOUR-APP-NAME.streamlit.app"
+
+    try:
+        headers = st.context.headers
+        host = headers.get("X-Forwarded-Host") or headers.get("Host")
+        proto = headers.get("X-Forwarded-Proto", "https")
+
+        if host and "localhost" not in host and "127.0.0.1" not in host:
+            return f"{proto}://{host}"
+    except Exception:
+        pass
+
+    return DEPLOYED_URL
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_live_statistics():
+    """Fetches factual statistics with aggressive fallbacks for instant UI loading."""
+    stats = {"students": 0, "submissions": 0, "passed": 0}
+
+    try:
+        df_students = fetch_data(
+            "SELECT COUNT(*) AS total FROM users WHERE role = 'Student'"
+        )
+        if df_students is not None and not df_students.empty:
+            stats["students"] = int(df_students.iloc[0]["total"])
+
         df_sub = fetch_data("SELECT COUNT(*) AS total FROM quiz_submissions")
         if df_sub is not None and not df_sub.empty:
-            stats["submissions"] = int(df_sub.iloc[0]['total'])
+            stats["submissions"] = int(df_sub.iloc[0]["total"])
 
-        # 3. Passed Submissions / Certificates Issued
-        df_pass = fetch_data("SELECT COUNT(*) AS total FROM quiz_submissions WHERE score >= 50")
+        df_pass = fetch_data(
+            "SELECT COUNT(*) AS total FROM quiz_submissions WHERE score >= 50"
+        )
         if df_pass is not None and not df_pass.empty:
-            stats["passed"] = int(df_pass.iloc[0]['total'])
+            stats["passed"] = int(df_pass.iloc[0]["total"])
 
-    except Exception as e:
-        # Fallback in case table structure differs during early setup
+    except Exception:
         pass
 
     return stats
 
-def render():
-    # Fetch factual stats from database
-    live_stats = fetch_live_statistics()
 
-    # --- INJECT CUSTOM RESPONSIVE CSS ---
-    st.markdown("""
+def render():
+    # --- 1. INJECT CUSTOM RESPONSIVE CSS FIRST ---
+    st.markdown(
+        """
         <style>
             .hero-card {
                 background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.7));
@@ -103,10 +118,13 @@ def render():
                 .hero-card { padding: 1.5rem 1rem; }
             }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
-    # --- HERO HEADER ---
-    st.markdown("""
+    # --- 2. HERO HEADER (INSTANT RENDER) ---
+    st.markdown(
+        """
         <div class="hero-card">
             <span class="event-badge">Official Academic Portal</span>
             <h1 class="hero-title">Department of AI & Data Science</h1>
@@ -114,32 +132,41 @@ def render():
                 Empowering future intelligence with real-time quizzes, competitive hackathons, and interactive analytics.
             </p>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
-    # --- MAIN RESPONSIVE GRID ---
+    # --- 3. MAIN INTERACTIVE GRID ---
     col_access, col_content = st.columns([1.1, 1.4], gap="large")
 
-    # --- PORTAL ACCESS CARD ---
     with col_access:
         st.subheader("🔑 Portal Access")
         st.markdown('<div class="login-container">', unsafe_allow_html=True)
-        
-        tab_login, tab_register, tab_qr = st.tabs(["🔑 Login", "📝 Student Register", "📱 Mobile QR"])
 
-        # LOGIN TAB
+        tab_login, tab_register, tab_qr = st.tabs(
+            ["🔑 Login", "📝 Student Register", "📱 Mobile QR"]
+        )
+
         with tab_login:
             st.caption("Access point for Students & Faculty members.")
             with st.form("login_form"):
-                identifier = st.text_input("Username, Email or Roll No", placeholder="e.g. 21AI001 or prof@dept.edu")
-                password = st.text_input("Password", type="password", placeholder="••••••••")
-                submit = st.form_submit_button("Sign In to Portal", use_container_width=True)
+                identifier = st.text_input(
+                    "Username, Email or Roll No",
+                    placeholder="e.g. 21AI001 or prof@dept.edu",
+                )
+                password = st.text_input(
+                    "Password", type="password", placeholder="••••••••"
+                )
+                submit = st.form_submit_button(
+                    "Sign In to Portal", use_container_width=True
+                )
 
                 if submit:
                     if identifier and password:
                         user_info, msg = authenticate_user(identifier, password)
                         if user_info:
                             st.session_state.user = user_info
-                            st.session_state.role = user_info['role']
+                            st.session_state.role = user_info["role"]
                             st.success(msg)
                             st.rerun()
                         else:
@@ -147,17 +174,28 @@ def render():
                     else:
                         st.warning("Please fill in all fields.")
 
-        # STUDENT REGISTRATION TAB
         with tab_register:
-            st.caption("🔒 Registration is **restricted to Students**. Faculty accounts are issued by System Admins.")
+            st.caption(
+                "🔒 Registration is **restricted to Students**. Faculty accounts are issued by System Admins."
+            )
             with st.form("registration_form", clear_on_submit=True):
-                reg_username = st.text_input("Username / Roll No", placeholder="e.g. 21AI001")
-                reg_email = st.text_input("Email Address", placeholder="student@example.com")
-                reg_password = st.text_input("Password", type="password", placeholder="••••••••")
-                reg_confirm_pass = st.text_input("Confirm Password", type="password", placeholder="••••••••")
-                
-                submit_reg = st.form_submit_button("Create Student Account", use_container_width=True)
-                
+                reg_username = st.text_input(
+                    "Username / Roll No", placeholder="e.g. 21AI001"
+                )
+                reg_email = st.text_input(
+                    "Email Address", placeholder="student@example.com"
+                )
+                reg_password = st.text_input(
+                    "Password", type="password", placeholder="••••••••"
+                )
+                reg_confirm_pass = st.text_input(
+                    "Confirm Password", type="password", placeholder="••••••••"
+                )
+
+                submit_reg = st.form_submit_button(
+                    "Create Student Account", use_container_width=True
+                )
+
                 if submit_reg:
                     if not reg_username or not reg_email or not reg_password:
                         st.error("Please fill out all required fields.")
@@ -166,26 +204,31 @@ def render():
                     elif len(reg_password) < 6:
                         st.warning("Password must be at least 6 characters.")
                     else:
-                        success, msg = register_user(reg_username, reg_email, reg_password, role="Student")
+                        success, msg = register_user(
+                            reg_username, reg_email, reg_password, role="Student"
+                        )
                         if success:
-                            st.success("🎉 Account created successfully! Please sign in.")
-                            st.cache_data.clear()  # Refresh stats on new registration
+                            st.success(
+                                "🎉 Account created successfully! Please sign in."
+                            )
+                            st.cache_data.clear()
                         else:
                             st.error(msg)
 
-        # QR CODE TAB
         with tab_qr:
             st.write("Scan to open on mobile browser:")
-            qr_img = generate_qr("https://ai-ds-portal.university.edu/login")
+            app_url = get_current_app_url()
+            qr_img = generate_qr(app_url)
             st.image(qr_img, width=180, caption="Quick Link QR")
+            st.caption(f"🔗 Target: `{app_url}`")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- ANNOUNCEMENTS & HIGHLIGHTS ---
     with col_content:
         st.subheader("🔥 Active Events")
-        
-        st.markdown("""
+
+        st.markdown(
+            """
             <div style="background: rgba(30, 41, 59, 0.6); border-left: 4px solid #a855f7; padding: 1.2rem; border-radius: 12px; margin-bottom: 1.5rem;">
                 <span class="event-badge">LIVE NOW</span>
                 <h3 style="color: #f8fafc; margin: 0.4rem 0;">National AI & ML Speed Hackathon</h3>
@@ -197,41 +240,50 @@ def render():
                     <span>🎯 30 MCQs + 2 Code Puzzles</span>
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
         st.subheader("📢 Department Notices")
-        st.info("📌 **Mid-Semester Data Science Sprint** starts Friday at 10:00 AM IST. Update your profiles prior to session launch.")
-        st.warning("⚠️ Proctoring Active: Tab-switching during quizzes triggers alerts on the Academic Integrity Dashboard.")
+        st.info(
+            "📌 **Mid-Semester Data Science Sprint** starts Friday at 10:00 AM IST. Update your profiles prior to session launch."
+        )
+        st.warning(
+            "⚠️ Proctoring Active: Tab-switching during quizzes triggers alerts on the Academic Integrity Dashboard."
+        )
 
-    # --- FACTUAL METRICS ROW ---
+    # --- 4. FACTUAL METRICS ROW (LOADED AT THE BOTTOM) ---
     st.markdown("---")
+
+    with st.spinner("Fetching live DB statistics..."):
+        live_stats = fetch_live_statistics()
+
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-    
+
     with col_s1:
         st.metric(
-            label="Registered Students", 
-            value=f"{live_stats['students']:,}", 
-            delta="Live DB Count"
+            label="Registered Students",
+            value=f"{live_stats['students']:,}",
+            delta="Live DB Count",
         )
     with col_s2:
         st.metric(
-            label="Total Submissions", 
-            value=f"{live_stats['submissions']:,}", 
-            delta="Real-time"
+            label="Total Submissions",
+            value=f"{live_stats['submissions']:,}",
+            delta="Real-time",
         )
     with col_s3:
         st.metric(
-            label="Verified Passes", 
-            value=f"{live_stats['passed']:,}", 
-            delta="Passing Score >= 50%"
+            label="Verified Passes",
+            value=f"{live_stats['passed']:,}",
+            delta="Passing Score >= 50%",
         )
     with col_s4:
         pass_rate = (
-            f"{(live_stats['passed'] / live_stats['submissions'] * 100):.1f}%" 
-            if live_stats['submissions'] > 0 else "N/A"
+            f"{(live_stats['passed'] / live_stats['submissions'] * 100):.1f}%"
+            if live_stats["submissions"] > 0
+            else "N/A"
         )
         st.metric(
-            label="Overall Pass Rate", 
-            value=pass_rate, 
-            delta="Factual Accuracy"
+            label="Overall Pass Rate", value=pass_rate, delta="Factual Accuracy"
         )
