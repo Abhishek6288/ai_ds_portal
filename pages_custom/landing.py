@@ -1,11 +1,14 @@
-# ✅ Correct imports in pages_custom/landing.py
+import sys
+import os
 import streamlit as st
 import qrcode
 from io import BytesIO
-from PIL import Image
 
-# Import authentication helper from root 'modules' package
-from modules.auth import authenticate_user
+# Ensure root path resolution
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Import authentication functions from modules package
+from modules.auth import authenticate_user, register_user
 
 def generate_qr(data: str) -> BytesIO:
     """Generates an in-memory QR code image stream."""
@@ -71,11 +74,13 @@ def render():
         st.subheader("🔑 Portal Access")
         
         # Auth Tabs
-        tab_login, tab_qr = st.tabs(["Roll No / Email Login", "QR Code Portal"])
+        tab_login, tab_register, tab_qr = st.tabs(["🔑 Login", "📝 Student Register", "📱 Mobile QR"])
 
+        # --- LOGIN TAB ---
         with tab_login:
+            st.caption("Students and Faculty log in with assigned credentials.")
             with st.form("login_form"):
-                identifier = st.text_input("Username, Email or Roll No", placeholder="e.g., 21AI001 or student@dept.edu")
+                identifier = st.text_input("Username, Email or Roll No", placeholder="e.g., 21AI001 or faculty@dept.edu")
                 password = st.text_input("Password", type="password")
                 submit = st.form_submit_button("Access Portal", use_container_width=True)
 
@@ -83,7 +88,7 @@ def render():
                     if identifier and password:
                         user_info, msg = authenticate_user(identifier, password)
                         
-                        if user_info is not None:
+                        if user_info:
                             st.session_state.user = user_info
                             st.session_state.role = user_info['role']
                             st.success(msg)
@@ -93,74 +98,35 @@ def render():
                     else:
                         st.warning("Please enter both login identifier and password.")
 
+        # --- STUDENT REGISTRATION TAB ---
+        with tab_register:
+            st.caption("🔒 Registration is restricted to **Students only**. Faculty accounts are pre-provisioned by system administrators.")
+            with st.form("registration_form", clear_on_submit=True):
+                reg_username = st.text_input("Username / Roll No", placeholder="e.g. 21AI001")
+                reg_email = st.text_input("Email Address", placeholder="student@dept.edu")
+                reg_password = st.text_input("Password", type="password")
+                reg_confirm_pass = st.text_input("Confirm Password", type="password")
+                
+                # Role selection dropdown removed to enforce Student role
+                submit_reg = st.form_submit_button("Create Student Account", use_container_width=True)
+                
+                if submit_reg:
+                    if not reg_username or not reg_email or not reg_password:
+                        st.error("Please complete all required fields.")
+                    elif reg_password != reg_confirm_pass:
+                        st.error("Passwords do not match.")
+                    elif len(reg_password) < 6:
+                        st.warning("Password must be at least 6 characters long.")
+                    else:
+                        # Hardcoded "Student" role to prevent unauthorized faculty registration
+                        success, msg = register_user(reg_username, reg_email, reg_password, role="Student")
+                        if success:
+                            st.success("🎉 Student account created! You can now log in.")
+                        else:
+                            st.error(msg)
+
+        # --- QR CODE TAB ---
         with tab_qr:
             st.write("Scan to access portal on mobile:")
             qr_img = generate_qr("https://ai-ds-portal.university.edu/login")
             st.image(qr_img, width=200, caption="Quick Mobile Entry Point")
-            
-import streamlit as st
-import sys, os
-
-# Ensure root path resolution
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from modules.auth import authenticate_user, register_user
-
-def render():
-    st.title("⚡ AI & DS Activity Portal")
-    
-    # Tabs for navigation between login & signup
-    tab_register, tab_login = st.tabs(["📝 New User Registration", "🔑 Account Login"])
-    
-    # --- REGISTRATION TAB ---
-    with tab_register:
-        st.subheader("Register Your Credentials")
-        
-        with st.form("registration_form", clear_on_submit=True):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                reg_username = st.text_input("Username", placeholder="e.g. john_doe")
-                reg_email = st.text_input("Email Address", placeholder="john@example.com")
-            
-            with col2:
-                reg_password = st.text_input("Password", type="password")
-                reg_confirm_pass = st.text_input("Confirm Password", type="password")
-                
-            reg_role = st.selectbox("Account Role", ["Student", "Faculty"])
-            
-            submit_reg = st.form_submit_button("Submit & Save to Database", use_container_width=True)
-            
-            if submit_reg:
-                # Basic Form Validation
-                if not reg_username or not reg_email or not reg_password:
-                    st.error("Please complete all required fields.")
-                elif reg_password != reg_confirm_pass:
-                    st.error("Passwords do not match.")
-                elif len(reg_password) < 6:
-                    st.warning("Password must be at least 6 characters long.")
-                else:
-                    # Trigger DB insertion logic
-                    success, msg = register_user(reg_username, reg_email, reg_password, reg_role)
-                    if success:
-                        st.success(f"🎉 Account successfully saved to database! Switch to the **Account Login** tab to sign in.")
-                    else:
-                        st.error(msg)
-
-    # --- LOGIN TAB ---
-    with tab_login:
-        st.subheader("Login to Portal")
-        username_input = st.text_input("Username or Email", key="login_user")
-        password_input = st.text_input("Password", type="password", key="login_pass")
-        
-        if st.button("Log In", use_container_width=True):
-            if username_input and password_input:
-                user_info, message = authenticate_user(username_input, password_input)
-                if user_info:
-                    st.session_state.user = user_info
-                    st.session_state.role = user_info["role"]
-                    st.success(message)
-                    st.rerun()
-                else:
-                    st.error(message)
-            else:
-                st.warning("Please fill in all fields.")
