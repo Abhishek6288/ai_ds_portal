@@ -25,21 +25,8 @@ def generate_qr(data: str) -> BytesIO:
 
 
 def get_current_app_url() -> str:
-    """Detects active public domain or falls back to your deployed Streamlit URL."""
-    # ⚠️ REPLACE THIS WITH YOUR ACTUAL LIVE STREAMLIT CLOUD APP URL:
-    DEPLOYED_URL = "https://YOUR-APP-NAME.streamlit.app"
-
-    try:
-        headers = st.context.headers
-        host = headers.get("X-Forwarded-Host") or headers.get("Host")
-        proto = headers.get("X-Forwarded-Proto", "https")
-
-        if host and "localhost" not in host and "127.0.0.1" not in host:
-            return f"{proto}://{host}"
-    except Exception:
-        pass
-
-    return DEPLOYED_URL
+    """Returns the primary deployed Streamlit Cloud URL."""
+    return "https://aidsapp-hjb79v2qnpsbtzaffhs8dy.streamlit.app/"
 
 
 @st.cache_data(ttl=60, show_spinner=False)
