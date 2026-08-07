@@ -1,23 +1,22 @@
-import mysql.connector
 import pandas as pd
-
-# Update with your MySQL credentials
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'root',
-    'database': 'ai_ds_portal'
-}
+from utils.db import get_db_connection
 
 def get_connection():
-    """ Returns a active connection object to the MySQL database. """
-    return mysql.connector.connect(**DB_CONFIG)
+    """ 
+    Returns an active connection object to the MySQL database.
+    Dynamically routes to Aiven (via secrets) on Streamlit Cloud,
+    or falls back to localhost when testing offline.
+    """
+    return get_db_connection()
 
 def fetch_data(query, params=None):
     """ Executes SELECT queries and returns a Pandas DataFrame. """
     conn = None
     try:
         conn = get_connection()
+        if conn is None:
+            return None
+            
         df = pd.read_sql(query, conn, params=params)
         return df
     except Exception as e:
@@ -33,6 +32,9 @@ def execute_query(query, params=None):
     cursor = None
     try:
         conn = get_connection()
+        if conn is None:
+            raise Exception("Failed to establish database connection.")
+            
         cursor = conn.cursor()
         cursor.execute(query, params or ())
         conn.commit()
