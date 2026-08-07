@@ -37,7 +37,7 @@ def fetch_live_statistics():
         if df_students is not None and not df_students.empty:
             stats["students"] = int(df_students.iloc[0]['total'])
 
-        # 2. Total Quiz Submissions (adjust table/column name if yours differs)
+        # 2. Total Quiz Submissions
         df_sub = fetch_data("SELECT COUNT(*) AS total FROM quiz_submissions")
         if df_sub is not None and not df_sub.empty:
             stats["submissions"] = int(df_sub.iloc[0]['total'])
@@ -188,7 +188,7 @@ def render():
         st.markdown("""
             <div style="background: rgba(30, 41, 59, 0.6); border-left: 4px solid #a855f7; padding: 1.2rem; border-radius: 12px; margin-bottom: 1.5rem;">
                 <span class="event-badge">LIVE NOW</span>
-                <h3 style="color: #f8fafc; margin: 0.4rem 0;">National AI & ML Speed Hackathon 2026</h3>
+                <h3 style="color: #f8fafc; margin: 0.4rem 0;">National AI & ML Speed Hackathon</h3>
                 <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 0.8rem;">
                     Test your skills in Generative AI, Deep Learning optimization, and complex SQL data transformations under strict time limits.
                 </p>
@@ -234,4 +234,4 @@ def render():
             label="Overall Pass Rate", 
             value=pass_rate, 
             delta="Factual Accuracy"
-        )git add .
+        )
