@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 import streamlit as st
 from streamlit_option_menu import option_menu
-    
+
 # 1. Configuration & Page Setup (Call ONLY ONCE)
 st.set_page_config(
     page_title="AI & DS Activity Portal",
@@ -49,7 +49,6 @@ with st.sidebar:
         icons = ["house", "trophy", "bar-chart"]
     else:
         if st.session_state.role == "Student":
-            # Removed "Coding Arena" and "code-slash" icon
             menu_options = ["Dashboard", "Quiz Portal", "Leaderboard", "Analytics"]
             icons = ["person-badge", "pencil-square", "trophy", "bar-chart"]
         elif st.session_state.role == "Faculty":
@@ -99,8 +98,6 @@ elif selected == "Dashboard":
 elif selected == "Quiz Portal" and st.session_state.role == "Student":
     import pages_custom.quiz_module as quiz_module
     quiz_module.render()
-
-# Removed "Coding Arena" route condition
 
 elif selected == "Leaderboard":
     import pages_custom.live_leaderboard as leaderboard
