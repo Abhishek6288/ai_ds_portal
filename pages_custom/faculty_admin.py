@@ -86,7 +86,24 @@ def render():
                 count_df = fetch_data("SELECT COUNT(*) AS total FROM questions WHERE quiz_id = %s;", (quiz_id,))
                 q_count = count_df.iloc[0]['total'] if count_df is not None and not count_df.empty else 0
 
-                with st.expander(f"📌 {title} ({q_count} Questions | ⏱️ {duration} mins | 🎯 Pass: {passing}%)"):
+                # Create a layout container row for each quiz title and its delete button
+                col_title, col_btn = st.columns([3, 1])
+                with col_title:
+                    st.markdown(f"### 📌 {title}")
+                with col_btn:
+                    if st.button("🗑️ Delete Quiz", key=f"del_quiz_{quiz_id}", type="primary"):
+                        try:
+                            # Cleanly delete all dependent rows and the quiz itself
+                            execute_query("DELETE FROM questions WHERE quiz_id = %s;", (quiz_id,))
+                            execute_query("DELETE FROM quiz_attempts WHERE quiz_id = %s;", (quiz_id,))
+                            execute_query("DELETE FROM quizzes WHERE id = %s;", (quiz_id,))
+                            
+                            st.success(f"Deleted '{title}'")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+
+                with st.expander(f"View Details & Questions ({q_count} Questions | ⏱️ {duration} mins | 🎯 Pass: {passing}%)"):
                     # Fetch questions for preview
                     questions_df = fetch_data("SELECT * FROM questions WHERE quiz_id = %s;", (quiz_id,))
                     
@@ -101,5 +118,7 @@ def render():
                             st.markdown("---")
                     else:
                         st.info("No questions added to this quiz yet.")
+                
+                st.markdown("---")
         else:
             st.info("No quizzes created yet.")
