@@ -130,32 +130,70 @@ def render():
         st.subheader("🔑 Portal Access")
         st.markdown('<div class="login-container">', unsafe_allow_html=True)
 
-        tab_login, tab_register, tab_qr = st.tabs(
-            ["🔑 Login", "📝 Student Register", "📱 Mobile QR"]
+        # Added explicit separation for Faculty Login Tab
+        tab_login, tab_faculty, tab_register, tab_qr = st.tabs(
+            ["👨‍🎓 Student Login", "🏫 Faculty Login", "📝 Student Register", "📱 Mobile QR"]
         )
 
         with tab_login:
-            st.caption("Access point for Students & Faculty members.")
-            with st.form("login_form"):
+            st.caption("Standard secure access for enrolled students.")
+            with st.form("student_login_form"):
                 identifier = st.text_input(
                     "Username, Email or Roll No",
-                    placeholder="e.g. 21AI001 or prof@dept.edu",
+                    placeholder="e.g. 21AI001",
+                    key="stud_id"
                 )
                 password = st.text_input(
-                    "Password", type="password", placeholder="••••••••"
+                    "Password", type="password", placeholder="••••••••", key="stud_pw"
                 )
-                submit = st.form_submit_button(
-                    "Sign In to Portal", use_container_width=True
+                submit_stud = st.form_submit_button(
+                    "Sign In as Student", use_container_width=True
                 )
 
-                if submit:
+                if submit_stud:
                     if identifier and password:
                         user_info, msg = authenticate_user(identifier, password)
                         if user_info:
-                            st.session_state.user = user_info
-                            st.session_state.role = user_info["role"]
-                            st.success(msg)
-                            st.rerun()
+                            # Force strict role validation for student portal tab
+                            if user_info.get("role") == "Student":
+                                st.session_state.user = user_info
+                                st.session_state.role = "Student"
+                                st.success("Student login successful!")
+                                st.rerun()
+                            else:
+                                st.error("Access Denied: Faculty members should use the Faculty Login tab.")
+                        else:
+                            st.error(msg)
+                    else:
+                        st.warning("Please fill in all fields.")
+
+        with tab_faculty:
+            st.caption("Restricted access portal for Faculty & Administrators.")
+            with st.form("faculty_login_form"):
+                fac_identifier = st.text_input(
+                    "Faculty Username or Email",
+                    placeholder="prof@dept.edu",
+                    key="fac_id"
+                )
+                fac_password = st.text_input(
+                    "Password", type="password", placeholder="••••••••", key="fac_pw"
+                )
+                submit_fac = st.form_submit_button(
+                    "Sign In as Faculty", use_container_width=True
+                )
+
+                if submit_fac:
+                    if fac_identifier and fac_password:
+                        user_info, msg = authenticate_user(fac_identifier, fac_password)
+                        if user_info:
+                            # Verify database role matches faculty privileges
+                            if user_info.get("role") == "Faculty":
+                                st.session_state.user = user_info
+                                st.session_state.role = "Faculty"
+                                st.success("Faculty portal access granted!")
+                                st.rerun()
+                            else:
+                                st.error("Access Denied: This account does not possess Faculty permissions.")
                         else:
                             st.error(msg)
                     else:
@@ -163,7 +201,7 @@ def render():
 
         with tab_register:
             st.caption(
-                "🔒 Registration is **restricted to Students**. Faculty accounts are issued by System Admins."
+                "🔒 Registration is **restricted to Students**. Faculty accounts are managed by System Admins."
             )
             with st.form("registration_form", clear_on_submit=True):
                 reg_username = st.text_input(
@@ -196,7 +234,7 @@ def render():
                         )
                         if success:
                             st.success(
-                                "🎉 Account created successfully! Please sign in."
+                                "🎉 Account created successfully! Please sign in via the Student Login tab."
                             )
                             st.cache_data.clear()
                         else:

@@ -43,20 +43,20 @@ with st.sidebar:
         st.write(f"👤 **{user.get('username', 'User')}** ({st.session_state.role})")
         st.markdown("---")
 
-    # Build menu options dynamically based on login status and role
+    # Build menu options dynamically
     if st.session_state.user is None:
-        menu_options = ["Home", "Leaderboard", "Analytics"]
-        icons = ["house", "trophy", "bar-chart"]
+        menu_options = ["Home"]
+        icons = ["house"]
     else:
         if st.session_state.role == "Student":
-            menu_options = ["Dashboard", "Quiz Portal", "Leaderboard", "Analytics"]
-            icons = ["person-badge", "pencil-square", "trophy", "bar-chart"]
+            menu_options = ["Dashboard", "Quiz Portal"]
+            icons = ["person-badge", "pencil-square"]
         elif st.session_state.role == "Faculty":
             menu_options = ["Dashboard", "Faculty Admin", "Integrity Monitor", "Leaderboard", "Analytics"]
             icons = ["person-badge", "gear", "shield-exclamation", "trophy", "bar-chart"]
         else:
-            menu_options = ["Home", "Leaderboard", "Analytics"]
-            icons = ["house", "trophy", "bar-chart"]
+            menu_options = ["Home"]
+            icons = ["house"]
 
     selected = option_menu(
         menu_title=None,
@@ -92,28 +92,29 @@ elif selected == "Dashboard":
         import pages_custom.student_dashboard as student_dashboard
         student_dashboard.render()
     elif st.session_state.role == "Faculty":
-        import pages_custom.faculty_admin as faculty_admin
-        faculty_admin.render()
-
-elif selected == "Quiz Portal" and st.session_state.role == "Student":
-    import pages_custom.quiz_module as quiz_module
-    quiz_module.render()
-
-elif selected == "Leaderboard":
-    import pages_custom.live_leaderboard as leaderboard
-    leaderboard.render()
-
-elif selected == "Analytics":
-    import pages_custom.analytics_hub as analytics
-    analytics.render()
+        st.title("👨‍🏫 Faculty Overview Dashboard")
+        st.info("Welcome to the faculty portal. Use the sidebar tabs to manage quizzes, view the leaderboard, or check analytics.")
 
 elif selected == "Faculty Admin" and st.session_state.role == "Faculty":
     import pages_custom.faculty_admin as faculty_admin
     faculty_admin.render()
 
 elif selected == "Integrity Monitor" and st.session_state.role == "Faculty":
-    import pages_custom.integrity_dashboard as integrity
-    integrity.render()
+    # Optional placeholder if you decide to implement it later
+    st.title("🛡️ Academic Integrity Monitor")
+    st.info("Proctoring and tab-switch logs will appear here.")
+
+elif selected == "Quiz Portal" and st.session_state.role == "Student":
+    import pages_custom.quiz_module as quiz_module
+    quiz_module.render()
+
+elif selected == "Leaderboard" and st.session_state.role == "Faculty":
+    import pages_custom.live_leaderboard as leaderboard
+    leaderboard.render()
+
+elif selected == "Analytics" and st.session_state.role == "Faculty":
+    import pages_custom.analytics as analytics
+    analytics.render()
 
 else:
     import pages_custom.landing as landing

@@ -7,7 +7,23 @@ def render():
     st.caption("Real-time rankings sorted by highest accuracy and fastest completion tiebreakers.")
     st.markdown("---")
 
-    # SQL Query with Accuracy & Tiebreaker Logic
+    # Fetch available quizzes for the dropdown filter
+    quizzes_df = fetch_data("SELECT id, quiz_title FROM quizzes;")
+
+    if quizzes_df is None or quizzes_df.empty:
+        st.info("📌 No quizzes available to rank yet.")
+        return
+
+    # Create quiz filter options dictionary (Title -> ID)
+    quiz_options = {row['quiz_title']: row['id'] for _, row in quizzes_df.iterrows()}
+    
+    # Add an "All Quizzes (Overall)" option at the very top if desired, or keep it per quiz
+    selected_quiz_title = st.selectbox("🎯 Filter Leaderboard by Quiz", list(quiz_options.keys()))
+    selected_quiz_id = quiz_options[selected_quiz_title]
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # SQL Query filtered by the selected quiz ID
     query = """
         SELECT 
             u.username AS student_name,
@@ -15,9 +31,10 @@ def render():
             MAX(q.percentage) AS max_pct,
             MAX(q.score) AS max_score,
             q.max_score AS total_possible,
-            MIN(q.attempted_at) AS first_achieved_at
+            MIN(q.created_at) AS first_achieved_at
         FROM quiz_attempts q
         JOIN users u ON q.user_id = u.id
+        WHERE q.quiz_id = %s
         GROUP BY u.id, q.user_id, u.username, q.quiz_title, q.max_score
         ORDER BY 
             max_pct DESC, 
@@ -26,11 +43,11 @@ def render():
     """
 
     try:
-        raw_data = fetch_data(query)
+        raw_data = fetch_data(query, (selected_quiz_id,))
     except Exception as e:
         raw_data = None
 
-    # NO "if raw_data:" EVALUATION (Prevents Ambiguous DataFrame Error)
+    # Handle data format safely
     if isinstance(raw_data, pd.DataFrame):
         df = raw_data
     elif isinstance(raw_data, (list, tuple, dict)):
@@ -38,7 +55,7 @@ def render():
     else:
         df = pd.DataFrame()
 
-    # SAFELY CHECK IF DATA EXISTS
+    # Safely check if data exists
     if not df.empty:
         # Format columns for display
         df['Best Score (%)'] = df['max_pct'].apply(lambda x: f"{float(x):.1f}%")
@@ -103,4 +120,4 @@ def render():
             hide_index=True
         )
     else:
-        st.info("🎯 No quiz attempts logged yet. Take the FY UG Assessment in the **Quiz Portal** to claim 1st place!")
+        st.info(f"📭 No student submissions recorded for **{selected_quiz_title}** yet. Be the first to take it in the **Quiz Portal**!")

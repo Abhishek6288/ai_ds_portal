@@ -1,13 +1,24 @@
 import pandas as pd
-from utils.db import get_db_connection
+import streamlit as st
+import mysql.connector
 
 def get_connection():
-    """ 
-    Returns an active connection object to the MySQL database.
-    Dynamically routes to Aiven (via secrets) on Streamlit Cloud,
-    or falls back to localhost when testing offline.
-    """
-    return get_db_connection()
+    """ Connects to Aiven MySQL using Streamlit secrets. """
+    try:
+        db_config = st.secrets["mysql"]
+        conn = mysql.connector.connect(
+            host=db_config["host"],
+            port=int(db_config.get("port", 28437)),
+            user=db_config["user"],
+            password=db_config["password"],
+            database=db_config["database"],
+            ssl_disabled=False
+        )
+        return conn
+    except Exception as e:
+        st.error(f"❌ Failed to connect to Aiven MySQL: {e}")
+        print(f"❌ Aiven Connection Error: {e}")
+        return None
 
 def fetch_data(query, params=None):
     """ Executes SELECT queries and returns a Pandas DataFrame. """
