@@ -49,8 +49,9 @@ with st.sidebar:
         icons = ["house"]
     else:
         if st.session_state.role == "Student":
-            menu_options = ["Dashboard", "Quiz Portal"]
-            icons = ["person-badge", "pencil-square"]
+            # Added Certificates option here
+            menu_options = ["Quiz Portal", "Certificates"]
+            icons = ["pencil-square", "award"]
         elif st.session_state.role == "Faculty":
             menu_options = ["Dashboard", "Faculty Admin", "Integrity Monitor", "Leaderboard", "Analytics"]
             icons = ["person-badge", "gear", "shield-exclamation", "trophy", "bar-chart"]
@@ -81,17 +82,14 @@ with st.sidebar:
 # 5. Route Handling Logic
 if selected == "Home":
     if st.session_state.user is not None:
-        import pages_custom.student_dashboard as student_dashboard
-        student_dashboard.render()
+        import pages_custom.quiz_module as quiz_module
+        quiz_module.render()
     else:
         import pages_custom.landing as landing
         landing.render()
 
 elif selected == "Dashboard":
-    if st.session_state.role == "Student":
-        import pages_custom.student_dashboard as student_dashboard
-        student_dashboard.render()
-    elif st.session_state.role == "Faculty":
+    if st.session_state.role == "Faculty":
         st.title("👨‍🏫 Faculty Overview Dashboard")
         st.info("Welcome to the faculty portal. Use the sidebar tabs to manage quizzes, view the leaderboard, or check analytics.")
 
@@ -100,13 +98,16 @@ elif selected == "Faculty Admin" and st.session_state.role == "Faculty":
     faculty_admin.render()
 
 elif selected == "Integrity Monitor" and st.session_state.role == "Faculty":
-    # Optional placeholder if you decide to implement it later
     st.title("🛡️ Academic Integrity Monitor")
     st.info("Proctoring and tab-switch logs will appear here.")
 
 elif selected == "Quiz Portal" and st.session_state.role == "Student":
     import pages_custom.quiz_module as quiz_module
     quiz_module.render()
+
+elif selected == "Certificates" and st.session_state.role == "Student":
+    import pages_custom.certificates as certificates
+    certificates.render()
 
 elif selected == "Leaderboard" and st.session_state.role == "Faculty":
     import pages_custom.live_leaderboard as leaderboard
