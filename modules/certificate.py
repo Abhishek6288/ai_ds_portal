@@ -29,8 +29,7 @@ def generate_certificate(student_name, quiz_title, score):
     name_y_position = int(height * 0.45)
     
     # Draw ONLY the student name
-    # Nudge the X-coordinate to the right by 40 pixels (adjust this number as needed)
-    draw.text(((width / 2) + 20, name_y_position), student_name.upper(), fill="#0f172a", anchor="ms", font=title_font)
+    draw.text((width / 2), name_y_position), student_name.upper(), fill="#0f172a", anchor="ms", font=title_font)
 
     # Save to memory buffer
     buffer = io.BytesIO()
