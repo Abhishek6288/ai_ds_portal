@@ -21,7 +21,7 @@ def generate_certificate(student_name, quiz_title, score):
 
     try:
         # Load custom font or fallback
-        title_font = ImageFont.truetype("usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 55)
+        title_font = ImageFont.truetype("usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 70)
     except:
         title_font = ImageFont.load_default()
 
