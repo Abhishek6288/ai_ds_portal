@@ -24,10 +24,10 @@ def generate_certificate(student_name, quiz_title, score):
 
     try:
         if os.path.exists(font_path):
-            title_font = ImageFont.truetype(font_path, 120)
+            title_font = ImageFont.truetype(font_path, 90)
         else:
             # Fallback to Linux system path if asset font is missing
-            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
+            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
     except:
         title_font = ImageFont.load_default()
 
