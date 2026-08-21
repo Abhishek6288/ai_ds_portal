@@ -20,7 +20,7 @@ def generate_certificate(student_name, quiz_title, score):
     width, height = image.size
 
     try:
-        # Load custom font or fallback
+        # Load custom font or fallback with a large size for mobile clarity
         title_font = ImageFont.truetype("usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 150)
     except:
         title_font = ImageFont.load_default()
@@ -28,7 +28,7 @@ def generate_certificate(student_name, quiz_title, score):
     # Position for the student's name (center ribbon line)
     name_y_position = int(height * 0.45)
     
-    # Draw ONLY the student name
+    # Draw ONLY the student name (with optional horizontal offset if you need to nudge it right later, e.g., (width / 2) + 40)
     draw.text((width / 2, name_y_position), student_name.upper(), fill="#0f172a", anchor="ms", font=title_font)
 
     # Save to memory buffer
