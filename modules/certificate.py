@@ -20,10 +20,15 @@ def generate_certificate(student_name, quiz_title, score):
     width, height = image.size
 
     try:
-        # Load custom font or fallback with a large size for mobile clarity
-        title_font = ImageFont.truetype("usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 1000)
+        # Load from your project's assets folder (reliable across both local and cloud)
+        font_path = "assets/DejaVuSans-Bold.ttf" # Or upload any .ttf font to your assets folder
+        title_font = ImageFont.truetype(font_path, 120)
     except:
-        title_font = ImageFont.load_default()
+        try:
+            # Fallback to Linux system path with correct leading slash
+            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
+        except:
+            title_font = ImageFont.load_default()
 
     # Position for the student's name (center ribbon line)
     name_y_position = int(height * 0.45)
