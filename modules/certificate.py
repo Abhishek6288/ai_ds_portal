@@ -19,8 +19,8 @@ def generate_certificate(student_name, quiz_title, score):
     draw = ImageDraw.Draw(image)
     width, height = image.size
 
-    # Load your specific font from the assets folder
-    font_path = "assets/DejaVuSans-ExtraLight.ttf"
+    # Load your specific bold font from the assets folder
+    font_path = "assets/DejaVuSans-Bold.ttf"
 
     try:
         if os.path.exists(font_path):
