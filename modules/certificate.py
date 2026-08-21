@@ -19,21 +19,22 @@ def generate_certificate(student_name, quiz_title, score):
     draw = ImageDraw.Draw(image)
     width, height = image.size
 
+    # Load the font directly from your assets folder (Change filename here if your .ttf file is named differently)
+    font_path = "assets/DejaVuSans-Bold.ttf"
+
     try:
-        # Load from your project's assets folder (reliable across both local and cloud)
-        font_path = "assets/DejaVuSans-Bold.ttf" # Or upload any .ttf font to your assets folder
-        title_font = ImageFont.truetype(font_path, 120)
-    except:
-        try:
-            # Fallback to Linux system path with correct leading slash
+        if os.path.exists(font_path):
+            title_font = ImageFont.truetype(font_path, 120)
+        else:
+            # Fallback to Linux system path if asset font is missing
             title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
-        except:
-            title_font = ImageFont.load_default()
+    except:
+        title_font = ImageFont.load_default()
 
     # Position for the student's name (center ribbon line)
     name_y_position = int(height * 0.45)
     
-    # Draw ONLY the student name (with optional horizontal offset if you need to nudge it right later, e.g., (width / 2) + 40)
+    # Draw ONLY the student name
     draw.text((width / 2, name_y_position), student_name.upper(), fill="#0f172a", anchor="ms", font=title_font)
 
     # Save to memory buffer
